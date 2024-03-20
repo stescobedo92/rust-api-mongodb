@@ -106,6 +106,7 @@ pub async fn get_all_users(db: Data<MongoRepo>) -> HttpResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use actix_web::App;
     use actix_web::http::StatusCode;
     use actix_web::test;
     use crate::repository::mongodb_repo::MongoRepo;

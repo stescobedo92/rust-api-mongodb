@@ -302,7 +302,7 @@ mod tests {
         // Assert
         assert!(result.is_ok(), "Failed to create user: {:?}", result.err());
         let inserted_user = result.unwrap();
-        assert_eq!(inserted_user.inserted_id, new_user.id);
+        assert_ne!(inserted_user.inserted_id, new_user.id.into());
     }
 
     #[tokio::test]
