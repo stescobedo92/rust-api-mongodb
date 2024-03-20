@@ -102,3 +102,70 @@ pub async fn get_all_users(db: Data<MongoRepo>) -> HttpResponse {
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::http::StatusCode;
+    use actix_web::test;
+    use crate::repository::mongodb_repo::MongoRepo;
+
+    #[tokio::test]
+    async fn test_create_user() {
+        // Arrange
+        let mut app = test::init_service(App::new().data(MongoRepo::init().await)).await;
+        let new_user = User {
+            id: None,
+            name: String::from("Test User"),
+            location: String::from("Test Location"),
+            title: String::from("Test Title"),
+        };
+        let req = test::TestRequest::post()
+            .uri("/user")
+            .set_json(&new_user)
+            .to_request();
+
+        // Act
+        let resp = test::call_service(&mut app, req).await;
+
+        // Assert
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_get_user() {
+        // Arrange
+        let mut app = test::init_service(App::new().data(MongoRepo::init().await)).await;
+        let id = "some_id"; // Provide an existing user ID
+        let req = test::TestRequest::get().uri(&format!("/user/{}", id)).to_request();
+
+        // Act
+        let resp = test::call_service(&mut app, req).await;
+
+        // Assert
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_update_user() {
+        // Arrange
+        let mut app = test::init_service(App::new().data(MongoRepo::init().await)).await;
+        let id = "some_id"; // Provide an existing user ID
+        let updated_user = User {
+            id: None, // Provide a new ID or the same ID
+            name: String::from("Updated Name"),
+            location: String::from("Updated Location"),
+            title: String::from("Updated Title"),
+        };
+        let req = test::TestRequest::put()
+            .uri(&format!("/user/{}", id))
+            .set_json(&updated_user)
+            .to_request();
+
+        // Act
+        let resp = test::call_service(&mut app, req).await;
+
+        // Assert
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+}
