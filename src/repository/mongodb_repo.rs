@@ -279,3 +279,65 @@ impl MongoRepo {
         Ok(users)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mongodb::bson::oid::ObjectId;
+
+    #[tokio::test]
+    async fn test_create_user() {
+        // Arrange
+        let repo = MongoRepo::init().await;
+        let new_user = User {
+            id: Some(ObjectId::new()),
+            name: String::from("Test User"),
+            location: String::from("Test Location"),
+            title: String::from("Test Title"),
+        };
+
+        // Act
+        let result = repo.create_user(new_user.clone()).await;
+
+        // Assert
+        assert!(result.is_ok(), "Failed to create user: {:?}", result.err());
+        let inserted_user = result.unwrap();
+        assert_eq!(inserted_user.inserted_id, new_user.id);
+    }
+
+    #[tokio::test]
+    async fn test_get_user() {
+        // Arrange
+        let repo = MongoRepo::init().await;
+        let id = String::from("some_id"); // Provide an existing user ID
+
+        // Act
+        let result = repo.get_user(&id).await;
+
+        // Assert
+        assert!(result.is_ok(), "Failed to get user: {:?}", result.err());
+        let user = result.unwrap();
+        assert_eq!(user.name, "Expected Name");
+    }
+
+    #[tokio::test]
+    async fn test_update_user() {
+        // Arrange
+        let repo = MongoRepo::init().await;
+        let id = String::from("some_id"); // Provide an existing user ID
+        let updated_user = User {
+            id: Some(ObjectId::new()), // Provide a new ID or the same ID
+            name: String::from("Updated Name"),
+            location: String::from("Updated Location"),
+            title: String::from("Updated Title"),
+        };
+
+        // Act
+        let result = repo.update_user(&id, updated_user).await;
+
+        // Assert
+        assert!(result.is_ok(), "Failed to update user: {:?}", result.err());
+        let update_result = result.unwrap();
+        assert_eq!(update_result.modified_count, 1);
+    }
+}

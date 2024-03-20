@@ -9,6 +9,7 @@ actix-web = "4"
 serde = "1.0.136"
 dotenv = "0.15.0"
 futures = "0.3"
+tokio = "1.36.0"
 
 [dependencies.mongodb]
 version = "2.2.0"
