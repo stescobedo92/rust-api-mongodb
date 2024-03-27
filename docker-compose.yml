@@ -1,13 +1,17 @@
-version: '3'
+version: '3.8'  # It's a good practice to specify the latest supported version for additional features and improved syntax.
+
 services:
   mongo:
-    image: mongo
+    image: mongo:latest  # Specifying 'latest' to ensure you're using the most recent version, but it's better to pin a specific version for consistency.
     restart: always
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongodb_data:/data/db  # This mounts the named volume to the MongoDB data directory, ensuring data persists.
+
   api-mongodb-app:
     build:
       context: .
@@ -17,5 +21,9 @@ services:
       - "8080:8080"
     depends_on:
       - mongo
+    environment:
+      - MONGOURI=mongodb://root:example@mongo:27017/rustDB
+    restart: always  # Ensures your API service restarts automatically if it fails.
+
 volumes:
-  mongodb_data:
+  mongodb_data:  # Declaring the volume used by MongoDB for data persistence.

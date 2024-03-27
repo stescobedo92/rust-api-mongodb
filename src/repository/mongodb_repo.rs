@@ -38,13 +38,8 @@ impl MongoRepo {
     /// ```
     pub async fn init() -> Self {
         dotenv().ok();
-        let uri = match env::var("MONGOURI") {
-            Ok(v) => v.to_string(),
-            Err(_) => format!("Error loading env variable"),
-        };
-        let client = Client::with_uri_str(uri)
-            .await
-            .expect("error connecting to database");
+        let uri = env::var("MONGOURI").expect("MONGOURI environment variable not set");
+        let client = Client::with_uri_str(&uri).await.expect("Error connecting to database");
         let db = client.database("rustDB");
         let col: Collection<User> = db.collection("User");
         MongoRepo { col }
@@ -83,21 +78,8 @@ impl MongoRepo {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn create_user(&self, new_user: User) -> Result<InsertOneResult, Error> {
-        let new_doc = User {
-            id: None,
-            name: new_user.name,
-            location: new_user.location,
-            title: new_user.title,
-        };
-        let user = self
-            .col
-            .insert_one(new_doc, None)
-            .await
-            .ok()
-            .expect("Error creating user");
-
-        Ok(user)
+    pub async fn create_user(&self, new_user: User) -> mongodb::error::Result<InsertOneResult> {
+        self.col.insert_one(new_user, None).await
     }
 
     /// Retrieves a user from the database asynchronously.
@@ -309,15 +291,26 @@ mod tests {
     async fn test_get_user() {
         // Arrange
         let repo = MongoRepo::init().await;
-        let id = String::from("some_id"); // Provide an existing user ID
+        let id = Some(mongodb::bson::oid::ObjectId::new()); // Generate a new ObjectId
+
+        // Create a user before trying to retrieve it
+        let new_user = User {
+            id: id.clone(),
+            name: "Expected Name".to_string(),
+            location: "Some Location".to_string(), // Add a location
+            title: "Some Title".to_string(), // Add a title
+        };
+        let create_result = repo.create_user(new_user).await;
+        assert!(create_result.is_ok(), "Failed to create user: {:?}", create_result.err());
 
         // Act
-        let result = repo.get_user(&id).await;
+        let result = match repo.get_user(&id.unwrap().to_string()).await {
+            Ok(user) => user,
+            Err(e) => panic!("Failed to get user: {:?}", e),
+        };
 
         // Assert
-        assert!(result.is_ok(), "Failed to get user: {:?}", result.err());
-        let user = result.unwrap();
-        assert_eq!(user.name, "Expected Name");
+        assert_eq!(result.name, "Expected Name", "User name does not match");
     }
 
     #[tokio::test]

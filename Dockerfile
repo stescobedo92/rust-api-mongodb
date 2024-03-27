@@ -12,16 +12,4 @@ RUN cargo fetch
 COPY src ./src
 RUN cargo build --release
 
-FROM debian:bullseye-slim
-
-# Set the MONGOURI environment variable
-ENV MONGOURI mongodb://root:example@mongo:27017/
-
-COPY --from=build-container /build_dir/target/release/rust-api-mongodb .
-
-RUN apt update && apt install libssl-dev ca-certificates -y
-
-# Expose both HTTP and HTTPS ports
-EXPOSE 8080
-
-CMD ["./rust-api-mongodb"]
+CMD ["./target/release/rust-api-mongodb"]
